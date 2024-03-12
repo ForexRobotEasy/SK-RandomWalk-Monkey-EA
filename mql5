@@ -1,0 +1,153 @@
+mql5
+//+------------------------------------------------------------------+
+//|                              SK RandomWalk Monkey EA             |
+//|                  Developer's Site: forexroboteasy.com             |
+//|                    Developer: Forex Robot Easy Team               |
+//+------------------------------------------------------------------+
+#property copyright 'Forex Robot Easy Team'
+#property link      'forexroboteasy.com'
+
+// Global variables
+double LotSize = 0.01; // Default lot size
+double StopLoss = 50; // Default stop loss in points
+double TakeProfit = 100; // Default take profit in points
+
+//+------------------------------------------------------------------+
+//|                            Customizable Settings                 |
+//+------------------------------------------------------------------+
+void SetLotSize(double size)
+{
+    LotSize = size;
+}
+
+void SetStopLoss(double stopLoss)
+{
+    StopLoss = stopLoss;
+}
+
+void SetTakeProfit(double takeProfit)
+{
+    TakeProfit = takeProfit;
+}
+
+//+------------------------------------------------------------------+
+//|                            Random Trade Function                  |
+//+------------------------------------------------------------------+
+int RandomTrade()
+{
+    int direction = MathRand() % 2; // Generate random direction: 0 for sell, 1 for buy
+    if (direction == 0)
+    {
+        // Execute a sell trade
+        OrderSend(Symbol(), OP_SELL, LotSize, Ask, 0, Bid + StopLoss * Point, Bid - TakeProfit * Point, 'RandomTrade', 0, 0, clrRed);
+        return -1; // Indicate sell trade
+    }
+    else
+    {
+        // Execute a buy trade
+        OrderSend(Symbol(), OP_BUY, LotSize, Bid, 0, Ask - StopLoss * Point, Ask + TakeProfit * Point, 'RandomTrade', 0, 0, clrGreen);
+        return 1; // Indicate buy trade
+    }
+}
+
+//+------------------------------------------------------------------+
+//|                             Trade Function                       |
+//+------------------------------------------------------------------+
+void Trade()
+{
+    int direction = RandomTrade();
+    if (direction == -1)
+    {
+        // Sell trade
+        double initialProfit = MarketInfo(Symbol(), MODE_PROFIT);
+        while (true)
+        {
+            double currentProfit = MarketInfo(Symbol(), MODE_PROFIT);
+            if (currentProfit - initialProfit >= TakeProfit * Point)
+            {
+                // Take profit reached, exit the trade
+                OrderClose(OrderTicket(), OrderLots(), Bid, 0, clrGreen);
+                break;
+            }
+            else if (currentProfit - initialProfit <= -StopLoss * Point)
+            {
+                // Stop loss reached, exit the trade
+                OrderClose(OrderTicket(), OrderLots(), Ask, 0, clrRed);
+                Trade(); // Revert to random trade process
+                break;
+            }
+        }
+    }
+    else
+    {
+        // Buy trade
+        double initialProfit = MarketInfo(Symbol(), MODE_PROFIT);
+        while (true)
+        {
+            double currentProfit = MarketInfo(Symbol(), MODE_PROFIT);
+            if (currentProfit - initialProfit >= TakeProfit * Point)
+            {
+                // Take profit reached, exit the trade
+                OrderClose(OrderTicket(), OrderLots(), Ask, 0, clrGreen);
+                break;
+            }
+            else if (currentProfit - initialProfit <= -StopLoss * Point)
+            {
+                // Stop loss reached, exit the trade
+                OrderClose(OrderTicket(), OrderLots(), Bid, 0, clrRed);
+                Trade(); // Revert to random trade process
+                break;
+            }
+        }
+    }
+}
+
+//+------------------------------------------------------------------+
+//|                        Monitoring Market Trends                   |
+//+------------------------------------------------------------------+
+bool MonitorMarketTrends()
+{
+    // Implement your market trend monitoring logic here
+    return true; // Placeholder return value
+}
+
+//+------------------------------------------------------------------+
+//|                            Calculate Profit/Loss                 |
+//+------------------------------------------------------------------+
+double CalculateProfitLoss()
+{
+    // Implement your profit/loss calculation logic here
+    return 0.0; // Placeholder return value
+}
+
+//+------------------------------------------------------------------+
+//|                          Expert Advisor Start Function            |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    // Initialize your expert advisor here
+    return INIT_SUCCEEDED;
+}
+
+void OnDeinit(const int reason)
+{
+    // Clean up and deinitialize your expert advisor here
+}
+
+void OnTick()
+{
+    if (MonitorMarketTrends())
+    {
+        Trade();
+    }
+}
+
+void OnTrade()
+{
+    // Implement your trade event handling logic here
+}
+
+void OnChartEvent(const int id, const long& lparam, const double& dparam, const string& sparam)
+{
+    // Implement your chart event handling logic here
+}
